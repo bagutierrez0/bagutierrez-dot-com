@@ -3,3 +3,8 @@
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+# astro
+astro/node_modules
+astro/.vscode
+astro/public
