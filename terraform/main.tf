@@ -1,34 +1,38 @@
-# set cloud provider
-provider "aws" {
-    region = "us-east-2"
-}
-
-# setup aws ssh key pair
-resource "aws_key_pair" "deployer" {
-    key_name   = "deployer_key"
-    public_key = var.ssh_public_key
-}
-
-# create a vpc
-resource "aws_vpc" "main" {
-    # fill this out later
-}
-
-# setup the security group
-resource "aws_security_group" "name" {
-    # fill this out later
-}
-
-
-# create ec2 instance
-resource "aws_instance" "ec2_instance" {
-    ami           = "ami-06e3c045d79fd65d9"
-    instance_type = "t3.micro"
-
-    tags = {
-        Name = "bagutierrez-dot-com"
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "6.30.0"
     }
-
-    key_name = aws_key_pair.deployer.key_name
+  }
 }
 
+provider "aws" {
+  region = "us-east-2"
+}
+
+#################################
+# MODULES
+#################################
+module "vpc" {
+  source = "./modules/vpc"
+
+  availability_zones = var.availability_zones
+  ssh_allowed_cidr   = var.ssh_allowed_cidr
+}
+
+module "ec2" {
+  source = "./modules/ec2"
+
+  ssh_public_key    = var.ssh_public_key
+  instance_type     = var.instance_type
+  subnet_id         = module.vpc.public_subnet_ids[0]
+  security_group_id = module.vpc.security_group_id
+}
+
+module "dns" {
+  source = "./modules/dns"
+
+  domain_name       = var.domain_name
+  ec2_eip_public_ip = module.ec2.ec2_eip_public_ip
+}
